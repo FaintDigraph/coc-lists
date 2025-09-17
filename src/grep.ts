@@ -57,6 +57,10 @@ class Task extends EventEmitter implements ListTask {
           location: {
             text,
             uri: file,
+            range: import_coc5.Range.create(
+              parseInt(ms[2]) - 1, parseInt(ms[3]) - 1,
+              parseInt(ms[2]) - 1, parseInt(ms[3]) - 1 + Math.max(5, text.length)
+            ),
             line: ms[4],
           }
         })
