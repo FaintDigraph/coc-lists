@@ -93,7 +93,7 @@ export default class GrepList extends BasicList {
 To use interactive mode, add '-I' or '--interactive' to LIST OPTIONS.
 To change colors, checkout 'man rg' or 'man ag'.
 To search from workspace folders instead of cwd, use '-folder' or '-workspace' argument.
-To search in current buffer only, use '-buffer' or '-B' argument.
+To search in current buffer only, use '-buffer' argument.
 Grep source provide some uniformed options to ease differences between rg and ag.`
   public options = [{
     name: '-S, -smartcase',
@@ -124,7 +124,7 @@ Grep source provide some uniformed options to ease differences between rg and ag
     name: '-W, -workspace',
     description: 'Grep files from all workspace folders instead of cwd.'
   }, {
-    name: '-B, -buffer',
+    name: '-buffer',
     description: 'Search in current buffer only.'
   }]
 
@@ -168,7 +168,7 @@ Grep source provide some uniformed options to ease differences between rg and ag
     let bufferFile: string | null = null
 
     // Handle buffer search
-    if (args.indexOf('-buffer') != -1 || args.indexOf('-B') != -1) {
+    if (args.indexOf('-buffer') != -1) {
       let valid = await window.valid
       if (!valid) throw new Error('No valid window for buffer search')
 
@@ -194,7 +194,7 @@ Grep source provide some uniformed options to ease differences between rg and ag
     }
     let task = new Task(interactive)
     if (cmd == 'rg' || cmd == 'ag') {
-      args = args.filter(s => ['-F', '-folder', '-W', '-workspace', '-buffer', '-B'].indexOf(s) == -1)
+      args = args.filter(s => ['-F', '-folder', '-W', '-workspace', '-buffer'].indexOf(s) == -1)
       args = convertOptions(args, cmd, useLiteral)
     }
 
