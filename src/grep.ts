@@ -93,6 +93,7 @@ export default class GrepList extends BasicList {
 To use interactive mode, add '-I' or '--interactive' to LIST OPTIONS.
 To change colors, checkout 'man rg' or 'man ag'.
 To search from workspace folders instead of cwd, use '-folder' or '-workspace' argument.
+To search in current buffer only, use '-buffer' or '-B' argument.
 Grep source provide some uniformed options to ease differences between rg and ag.`
   public options = [{
     name: '-S, -smartcase',
@@ -122,6 +123,9 @@ Grep source provide some uniformed options to ease differences between rg and ag
   }, {
     name: '-W, -workspace',
     description: 'Grep files from all workspace folders instead of cwd.'
+  }, {
+    name: '-B, -buffer',
+    description: 'Search in current buffer only.'
   }]
 
   constructor(nvim: Neovim) {
@@ -161,6 +165,21 @@ Grep source provide some uniformed options to ease differences between rg and ag
     let patterns = config.get<string[]>('excludePatterns', [])
     let { window } = context
     let cwds: string[]
+    let bufferFile: string | null = null
+
+    // Handle buffer search
+    if (args.indexOf('-buffer') != -1 || args.indexOf('-B') != -1) {
+      let valid = await window.valid
+      if (!valid) throw new Error('No valid window for buffer search')
+
+      let buf = await window.buffer
+      let doc = workspace.getDocument(buf.id)
+      if (!doc) throw new Error('No document found in current buffer')
+
+      bufferFile = URI.parse(doc.uri).fsPath
+    }
+
+    // Determine search directories (normal logic)
     if (args.indexOf('-F') != -1 || args.indexOf('-folder') != -1) {
       cwds = [workspace.rootPath]
     } else if (args.indexOf('-W') != -1 || args.indexOf('-workspace') != -1) {
@@ -175,8 +194,8 @@ Grep source provide some uniformed options to ease differences between rg and ag
     }
     let task = new Task(interactive)
     if (cmd == 'rg' || cmd == 'ag') {
+      args = args.filter(s => ['-F', '-folder', '-W', '-workspace', '-buffer', '-B'].indexOf(s) == -1)
       args = convertOptions(args, cmd, useLiteral)
-      args = args.filter(s => ['-F', '-folder', '-W', '-workspace'].indexOf(s) == -1)
     }
 
     let text = ''
@@ -188,9 +207,19 @@ Grep source provide some uniformed options to ease differences between rg and ag
         text = last
       }
     }
-    if (!args.includes('--')) {
-      args.push('--', './')
+    if (bufferFile) {
+      // For buffer search, pass the buffer file directly
+      if (!args.includes('--')) {
+        args.push('--', bufferFile)
+      } else {
+        args.push(bufferFile)
+      }
+    } else {
+      if (!args.includes('--')) {
+        args.push('--', './')
+      }
     }
+
     task.start(text, cmd, args, cwds, patterns, maxLines)
     return task
   }
