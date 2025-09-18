@@ -176,7 +176,9 @@ Grep source provide some uniformed options to ease differences between rg and ag
       let doc = workspace.getDocument(buf.id)
       if (!doc) throw new Error('No document found in current buffer')
 
-      bufferFile = URI.parse(doc.uri).fsPath
+      let absolutePath = URI.parse(doc.uri).fsPath
+      let cwd = await nvim.call('getcwd')
+      bufferFile = path.relative(cwd, absolutePath)
     }
 
     // Determine search directories (normal logic)
